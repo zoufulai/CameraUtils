@@ -40,6 +40,7 @@ import java.io.FileOutputStream
  * =====================
  * Auther joe
  * Date---19/06/06
+ * =====================
  */
 class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
     override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
@@ -60,6 +61,9 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
     }
 
 
+    /**
+     * 处理页面暂时退出情况
+     */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     fun onResume() {
         CameraNewInterface.getInstance(context).startBackgroundThread()
@@ -70,11 +74,19 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
         }
     }
 
+    /**
+     * 处理页面暂时退出情况
+     */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     fun onPause() {
         CameraNewInterface.getInstance(context).closeCamera()
         CameraNewInterface.getInstance(context).stopBackgroundThread()
     }
+
+
+    /**
+     * 初始化参数
+     */
 
     var textureView: AutoFitTextureView
     var captureLayout: CaptureLayout
@@ -125,6 +137,9 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
 
     }
 
+    /**
+     * 初始化控件
+     */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @RequiresApi(Build.VERSION_CODES.KITKAT)
     fun initView() {
@@ -192,6 +207,9 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
         this.addView(switchFlash)
     }
 
+    /**
+     * 初始化监听事件
+     */
     fun initListener() {
         captureLayout.mQuitListener = object : QuitListener {
             override fun quit() {
@@ -275,15 +293,10 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
 
 
     /**
-
      * 获取视频文件截图
-
      *
-
      * @param path 视频文件的路径
-
      * @return Bitmap 返回获取的Bitmap
-
      */
 
     private fun getVideoThumb(path: String): Bitmap {
@@ -296,6 +309,8 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
 
     }
 
+
+    //缓存文件路径
     private var filePath: String = ""
 
     private val cameraHandler = object : Handler() {
@@ -344,6 +359,9 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
         }
     }
 
+    /**
+     * 保存文件路径
+     */
     private var savePath: String = ""
     fun setSavePath(path: String) {
         this.savePath = path
@@ -354,6 +372,9 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
         this.operationListener = operationListener
     }
 
+    /**
+     * 操作方法
+     */
     interface OperationListener {
         fun quite()
         fun cancel()

@@ -31,12 +31,16 @@ import java.io.File
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 
 
 /**
  * =====================
  * Auther joe
  * Date---19/06/06
+ *
+ * 重点实现相机拍照，录制视频部分
+ * ===========================
  */
 class CameraNewInterface private constructor(context: Context) {
 
@@ -51,9 +55,16 @@ class CameraNewInterface private constructor(context: Context) {
         const val PREVIEW_HEIGHT = 1280                                       //预览的高度
         const val SAVE_WIDTH = 720                                            //保存图片的宽度
         const val SAVE_HEIGHT = 1280                                          //保存图片的高度
+        fun cameraNewInterface(context: Context): CameraNewInterface {
+            if (cameraNewInterface == null)
+                cameraNewInterface = CameraNewInterface(context)
+            return cameraNewInterface!!
+        }
+
+        var cameraNewInterface: CameraNewInterface? = null
 
         fun getInstance(context: Context): CameraNewInterface {
-            return Inner.cameraNewInterface(context)
+            return cameraNewInterface(context)
         }
     }
 
@@ -69,16 +80,6 @@ class CameraNewInterface private constructor(context: Context) {
     private var handlerThread: HandlerThread? = null
     private var mPreviewRequestBuilder: CaptureRequest.Builder? = null
 
-    private object Inner {
-        fun cameraNewInterface(context: Context): CameraNewInterface {
-            if (cameraNewInterface == null)
-                cameraNewInterface = CameraNewInterface(context)
-            return cameraNewInterface!!
-        }
-
-        var cameraNewInterface: CameraNewInterface? = null
-    }
-
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private var mPreviewSize = Size(PREVIEW_WIDTH, PREVIEW_HEIGHT)                      //预览大小
@@ -87,6 +88,9 @@ class CameraNewInterface private constructor(context: Context) {
 
     private var mCameraSensorOrientation = 0                                            //摄像头方向
 
+    /**
+     * 打开相机
+     */
     @SuppressLint("MissingPermission")
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     fun openCamera(textureView: AutoFitTextureView) {
@@ -97,6 +101,10 @@ class CameraNewInterface private constructor(context: Context) {
         if (cameraIdList.isEmpty()) {
             //mActivity.toast("没有可用相机")
             return
+        }
+
+        if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
+            throw RuntimeException("Time out waiting to lock camera opening.")
         }
 
         for (id in cameraIdList) {
@@ -318,6 +326,7 @@ class CameraNewInterface private constructor(context: Context) {
     object : CameraDevice.StateCallback() {
         @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         override fun onOpened(cameraDevice: CameraDevice) {
+            cameraOpenCloseLock.release()
             this@CameraNewInterface.mCameraDevice = cameraDevice
             i("相机已经打开")
             takePreview()
@@ -325,12 +334,14 @@ class CameraNewInterface private constructor(context: Context) {
 
         @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         override fun onDisconnected(cameraDevice: CameraDevice) {
+            cameraOpenCloseLock.release()
             cameraDevice.close()
             i("相机连接断开")
         }
 
         @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         override fun onError(cameraDevice: CameraDevice, i: Int) {
+            cameraOpenCloseLock.release()
             cameraDevice.close()
             this@CameraNewInterface.mCameraDevice = null
             i("相机打开失败")
