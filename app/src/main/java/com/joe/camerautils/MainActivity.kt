@@ -62,4 +62,5 @@ class MainActivity : AppCompatActivity() {
         camerview.onPause()
         super.onPause()
     }
+
 }

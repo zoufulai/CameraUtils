@@ -51,7 +51,7 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
         //设置图片缓存路径
         CameraNewInterface.getInstance(context).cameraHandler = cameraHandler
-        CameraNewInterface.getInstance(context).openCamera(textureView, width, height)
+        CameraNewInterface.getInstance(context).openCamera(textureView)
     }
 
 
@@ -59,7 +59,7 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
     fun onResume() {
         CameraNewInterface.getInstance(context).startBackgroundThread()
         if (textureView.isAvailable) {
-            CameraNewInterface.getInstance(context).openCamera(textureView, width, height)
+            CameraNewInterface.getInstance(context).openCamera(textureView)
         } else {
             textureView.surfaceTextureListener = this
         }
@@ -255,8 +255,9 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
                 CameraNewInterface.getInstance(context).stopRecordingVideo()
             }
 
+            @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun recorderShort() {
-
+                CameraNewInterface.getInstance(context).cancelRecordingVideo()
             }
 
             //开始录制视频
@@ -315,6 +316,9 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
                     var path = msg.data.getString("path")
                     operationListener.save(File(path))
 
+                    //删除缓存文件,重置路径
+                    previewImg.setImageBitmap(null)
+                    File(filePath).delete()
                     filePath = ""
                     previewImg.visibility = View.GONE
                 }

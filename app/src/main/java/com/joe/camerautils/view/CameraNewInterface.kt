@@ -82,8 +82,6 @@ class CameraNewInterface private constructor(context: Context) {
         var cameraNewInterface: CameraNewInterface? = null
     }
 
-    private var preview_width: Int = 0
-    private var preview_height: Int = 0
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private var mPreviewSize = Size(PREVIEW_WIDTH, PREVIEW_HEIGHT)                      //预览大小
@@ -94,7 +92,7 @@ class CameraNewInterface private constructor(context: Context) {
 
     @SuppressLint("MissingPermission")
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    fun openCamera(textureView: AutoFitTextureView, width: Int, height: Int) {
+    fun openCamera(textureView: AutoFitTextureView) {
         mCameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         mTextureView = textureView
 
@@ -114,9 +112,6 @@ class CameraNewInterface private constructor(context: Context) {
             }
             //log("设备中的摄像头 $id")
         }
-
-        preview_width = width
-        preview_height = height
 
         val supportLevel = mCameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL)
         if (supportLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
@@ -409,16 +404,6 @@ class CameraNewInterface private constructor(context: Context) {
      */
     private val STATE_PICTURE_TAKEN = 4
 
-    /**
-     * Max preview width that is guaranteed by Camera2 API
-     */
-    private val MAX_PREVIEW_WIDTH = 1920
-
-    /**
-     * Max preview height that is guaranteed by Camera2 API
-     */
-    private val MAX_PREVIEW_HEIGHT = 1080
-
     var mState: Int? = null
 
     private val mCaptureCallback = @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -616,11 +601,14 @@ class CameraNewInterface private constructor(context: Context) {
         else
             CameraCharacteristics.LENS_FACING_FRONT
         releaseCamera()
-        openCamera(textureView, width, height)
+        openCamera(textureView)
     }
 
+    /**
+     * 释放相机
+     */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    fun releaseCamera() {
+    private fun releaseCamera() {
         mCaptureSession?.close()
         mCaptureSession = null
 
@@ -636,6 +624,10 @@ class CameraNewInterface private constructor(context: Context) {
     private var mFile: File? = null
 
     private var flashType: Int = FLASH_TYPE_AUTO
+
+    /**
+     * 设置闪光灯
+     */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     fun setFlashType(flashType: Int) {
         this.flashType = flashType
@@ -677,7 +669,7 @@ class CameraNewInterface private constructor(context: Context) {
 
 
     /**
-     * Output file for video
+     * 文件缓存路径
      */
     private var nextePath: String? = null
 
@@ -713,6 +705,9 @@ class CameraNewInterface private constructor(context: Context) {
      */
     private var sensorOrientation = 0
 
+    /**
+     *开始录制视频
+     */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     fun startRecordingVideo() {
 
@@ -748,6 +743,7 @@ class CameraNewInterface private constructor(context: Context) {
                     updatePreview()
                     context as Activity
                     context.runOnUiThread {
+                        Log.e("Error", "00000000000开始录制视频000000000000")
                         isRecordingVideo = true
                         mediaRecorder?.start()
                     }
@@ -766,6 +762,9 @@ class CameraNewInterface private constructor(context: Context) {
         mCaptureSession = null
     }
 
+    /**
+     * 设置视频录制参数
+     */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     @Throws(IOException::class)
     private fun setUpMediaRecorder(context: Context) {
@@ -793,6 +792,7 @@ class CameraNewInterface private constructor(context: Context) {
             setOutputFile(nextePath)
             setVideoEncodingBitRate(10000000)
             setVideoFrameRate(30)
+            setOrientationHint(90)
             setVideoSize(videoSize.width, videoSize.height)
             setVideoEncoder(MediaRecorder.VideoEncoder.H264)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
@@ -800,6 +800,9 @@ class CameraNewInterface private constructor(context: Context) {
         }
     }
 
+    /**
+     * 新建缓存视频地址
+     */
     private fun getVideoFilePath(context: Context?): String {
         val filename = "${System.currentTimeMillis()}.mp4"
         val dir = context?.cacheDir
@@ -811,6 +814,9 @@ class CameraNewInterface private constructor(context: Context) {
         }
     }
 
+    /**
+     * 新建缓存图片地址
+     */
     private fun getImgFilePath(context: Context?): String {
         val filename = "${System.currentTimeMillis()}.png"
         val dir = context?.cacheDir
@@ -890,6 +896,20 @@ class CameraNewInterface private constructor(context: Context) {
         data.putString("path", nextePath)
         msg.data = data
         cameraHandler!!.sendMessage(msg)
+        nextePath = null
+
+        takePreview()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    fun cancelRecordingVideo() {
+        isRecordingVideo = false
+        mediaRecorder?.apply {
+            stop()
+            reset()
+        }
+        //删除缓存文件
+        File(nextePath).delete()
         nextePath = null
 
         takePreview()
