@@ -7,6 +7,11 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.view.View
 
+/**
+ * =====================
+ * Auther joe
+ * Date---19/06/06
+ */
 class QuitButton(context: Context,size:Int) : View(context) {
     private val size: Int
     private var center_X: Int

@@ -34,12 +34,9 @@ import java.util.concurrent.Semaphore
 
 
 /**
- * =====================================
- * 作    者: 陈嘉桐
- * 版    本：1.1.4
- * 创建日期：2017/8/10
- * 描    述：
- * =====================================
+ * =====================
+ * Auther joe
+ * Date---19/06/06
  */
 class CameraNewInterface private constructor(context: Context) {
 

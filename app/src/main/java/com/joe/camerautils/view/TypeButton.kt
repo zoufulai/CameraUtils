@@ -4,6 +4,11 @@ import android.content.Context
 import android.graphics.*
 import android.view.View
 
+/**
+ * =====================
+ * Auther joe
+ * Date---19/06/06
+ */
 class TypeButton(context: Context, type: Int, size: Float) : View(context) {
 
     private val button_size: Int = size.toInt() //按钮大小

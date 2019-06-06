@@ -13,6 +13,11 @@ import com.joe.camerautils.listener.QuitListener
 import com.joe.camerautils.listener.TypeListener
 import com.joe.camerautils.utils.getScreenWidth
 
+/**
+ * =====================
+ * Auther joe
+ * Date---19/06/06
+ */
 class CaptureLayout(context: Context) : FrameLayout(context) {
     private var layout_width: Int
     private var layout_height: Int

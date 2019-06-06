@@ -36,6 +36,11 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 
 
+/**
+ * =====================
+ * Auther joe
+ * Date---19/06/06
+ */
 class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
     override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
 

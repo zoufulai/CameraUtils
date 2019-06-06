@@ -15,6 +15,11 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
+/**
+ * =====================
+ * Auther joe
+ * Date---19/06/06
+ */
 class ImageSaver(
     private val mImage: Image,
     private val mFile: File,

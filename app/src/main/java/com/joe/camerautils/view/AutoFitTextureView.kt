@@ -5,6 +5,11 @@ import android.util.AttributeSet
 import android.view.TextureView
 import java.lang.IllegalArgumentException
 
+/**
+ * =====================
+ * Auther joe
+ * Date---19/06/06
+ */
 class AutoFitTextureView constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     TextureView(context, attrs, defStyle) {
     private var mRatioWidth = 0

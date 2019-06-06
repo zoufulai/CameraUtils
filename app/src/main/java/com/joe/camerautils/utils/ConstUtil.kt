@@ -1,5 +1,10 @@
 package com.joe.camerautils.utils
 
+/**
+ * =====================
+ * Auther joe
+ * Date---19/06/06
+ */
 object ConstUtil {
     const val IMG_PREVIEW_SHOW = 1
     const val IMG_PREVIEW_HIDE = 2

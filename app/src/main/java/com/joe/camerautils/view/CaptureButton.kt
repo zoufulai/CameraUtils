@@ -13,6 +13,11 @@ import android.view.MotionEvent
 import android.view.View
 import com.joe.camerautils.listener.CaptureListener
 
+/**
+ * =====================
+ * Auther joe
+ * Date---19/06/06
+ */
 class CaptureButton(context: Context, size: Float) : View(context) {
 
     private var state: Int;
