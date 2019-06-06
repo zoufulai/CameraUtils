@@ -2,8 +2,10 @@ package com.joe.camerautils.view
 
 import android.annotation.TargetApi
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.SurfaceTexture
+import android.media.MediaMetadataRetriever
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -20,13 +22,15 @@ import com.cjt2325.kotlin_jcameraview.CameraNewInterface
 import com.joe.camerautils.listener.CaptureListener
 import com.joe.camerautils.listener.QuitListener
 import com.joe.camerautils.listener.TypeListener
+import com.joe.camerautils.utils.ConstUtil.FILE_COPY_SAVE
 import com.joe.camerautils.utils.ConstUtil.FLASH_TYPE_AUTO
 import com.joe.camerautils.utils.ConstUtil.FLASH_TYPE_AWLAYS_OPEN
 import com.joe.camerautils.utils.ConstUtil.FLASH_TYPE_CLOSE
 import com.joe.camerautils.utils.ConstUtil.FLASH_TYPE_OPEN
 import com.joe.camerautils.utils.ConstUtil.IMG_PREVIEW_HIDE
 import com.joe.camerautils.utils.ConstUtil.IMG_PREVIEW_SHOW
-import com.joe.camerautils.utils.ConstUtil.IMG_SAVE
+import com.joe.camerautils.utils.ConstUtil.VEDIO_PREVIEW_HIDE
+import com.joe.camerautils.utils.ConstUtil.VEDIO_PREVIEW_SHOW
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -41,17 +45,30 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?): Boolean {
-        CameraNewInterface.getInstance().stopCamera()
-        return true
-    }
+    override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?) = true
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
         //设置图片缓存路径
-        CameraNewInterface.getInstance().setCachePath(context.cacheDir.path)
-        CameraNewInterface.getInstance().cameraHandler = cameraHandler
-        CameraNewInterface.getInstance().openCamera(context, textureView, width, height)
+        CameraNewInterface.getInstance(context).cameraHandler = cameraHandler
+        CameraNewInterface.getInstance(context).openCamera(textureView, width, height)
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    fun onResume() {
+        CameraNewInterface.getInstance(context).startBackgroundThread()
+        if (textureView.isAvailable) {
+            CameraNewInterface.getInstance(context).openCamera(textureView, width, height)
+        } else {
+            textureView.surfaceTextureListener = this
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    fun onPause() {
+        CameraNewInterface.getInstance(context).closeCamera()
+        CameraNewInterface.getInstance(context).stopBackgroundThread()
     }
 
     var textureView: AutoFitTextureView
@@ -124,7 +141,7 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
         switchCamera.layoutParams = switchcamera_param
         switchCamera.setImageResource(com.joe.camerautils.R.drawable.ic_camera)
         switchCamera.setOnClickListener {
-            CameraNewInterface.getInstance().exchangeCamera(context, textureView, width, height)
+            CameraNewInterface.getInstance(context).exchangeCamera(textureView, width, height)
         }
 
         val switchflash_param = LayoutParams(60, 60)
@@ -137,22 +154,22 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
                 FLASH_TYPE_AUTO -> {
                     flashType = FLASH_TYPE_OPEN
                     switchFlash.setImageResource(com.joe.camerautils.R.drawable.ic_l2)
-                    CameraNewInterface.getInstance().setFlashType(flashType)
+                    CameraNewInterface.getInstance(context).setFlashType(flashType)
                 }
                 FLASH_TYPE_OPEN -> {
                     flashType = FLASH_TYPE_CLOSE
                     switchFlash.setImageResource(com.joe.camerautils.R.drawable.ic_l3)
-                    CameraNewInterface.getInstance().setFlashType(flashType)
+                    CameraNewInterface.getInstance(context).setFlashType(flashType)
                 }
                 FLASH_TYPE_CLOSE -> {
                     flashType = FLASH_TYPE_AWLAYS_OPEN
                     switchFlash.setImageResource(com.joe.camerautils.R.drawable.ic_l4)
-                    CameraNewInterface.getInstance().setFlashType(flashType)
+                    CameraNewInterface.getInstance(context).setFlashType(flashType)
                 }
-                FLASH_TYPE_AWLAYS_OPEN->{
+                FLASH_TYPE_AWLAYS_OPEN -> {
                     flashType = FLASH_TYPE_AUTO
                     switchFlash.setImageResource(com.joe.camerautils.R.drawable.ic_l1)
-                    CameraNewInterface.getInstance().setFlashType(flashType)
+                    CameraNewInterface.getInstance(context).setFlashType(flashType)
                 }
             }
         }
@@ -187,14 +204,12 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
             override fun confirm() {
                 //在子线程处理耗时操作
                 Thread(Runnable {
-                    Log.e("Error", "99999999999====" + Thread.currentThread().name)
-                    var file = CameraNewInterface.getInstance().getFile()
-                    Log.e("Error", "00000000000====file.path=")
-                    //保存图片
+                    var file = File(filePath)
+                    //copy文件保存
                     var bytesum = 0
                     if (file != null && file!!.exists()) { //文件存在时
                         Log.e("Error", "00000000000=====" + file.path)
-                        var of = File(savePath + "/" + System.currentTimeMillis() + ".png")
+                        var of = File(savePath + "/" + file.name)
                         if (!of.exists())
                             of.createNewFile()
                         val inStream = FileInputStream(file) //读入原文件
@@ -212,7 +227,7 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
                         inStream.close()
 
                         var msg = cameraHandler.obtainMessage()
-                        msg.what = IMG_SAVE
+                        msg.what = FILE_COPY_SAVE
                         var data = Bundle()
                         data.putString("path", of.path)
                         msg.data = data
@@ -232,22 +247,50 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
 
             @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun caputre() {
-                CameraNewInterface.getInstance().takePicture()
+                CameraNewInterface.getInstance(context).takePicture()
             }
 
+            @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun recorderEnd(time: Long) {
-
+                CameraNewInterface.getInstance(context).stopRecordingVideo()
             }
 
             override fun recorderShort() {
 
             }
 
+            //开始录制视频
+            @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun recorderStart() {
-
+                CameraNewInterface.getInstance(context).startRecordingVideo()
             }
         }
     }
+
+
+    /**
+
+     * 获取视频文件截图
+
+     *
+
+     * @param path 视频文件的路径
+
+     * @return Bitmap 返回获取的Bitmap
+
+     */
+
+    private fun getVideoThumb(path: String): Bitmap {
+
+        val media = MediaMetadataRetriever()
+
+        media.setDataSource(path)
+
+        return media.getFrameAtTime()
+
+    }
+
+    private var filePath: String = ""
 
     private val cameraHandler = object : Handler() {
 
@@ -256,29 +299,50 @@ class CameraView : FrameLayout, TextureView.SurfaceTextureListener {
                 IMG_PREVIEW_SHOW -> {
                     var path = msg.data.getString("path")
                     previewImg.setImageBitmap(BitmapFactory.decodeFile(path))
+                    filePath = path
                     previewImg.visibility = View.VISIBLE
                     captureLayout.startButtonAnimation()
                 }
                 IMG_PREVIEW_HIDE -> {
                     previewImg.visibility = View.GONE
+
+                    //删除缓存文件
+                    previewImg.setImageBitmap(null)
+                    File(filePath).delete()
                 }
-                IMG_SAVE -> {
-                    //返回图片
+                FILE_COPY_SAVE -> {
+                    //返回
                     var path = msg.data.getString("path")
                     operationListener.save(File(path))
+
+                    filePath = ""
+                    previewImg.visibility = View.GONE
+                }
+                VEDIO_PREVIEW_SHOW -> {
+                    var path = msg.data.getString("path")
+                    filePath = path
+                    previewImg.setImageBitmap(getVideoThumb(path))
+                    previewImg.visibility = View.VISIBLE
+                    captureLayout.startButtonAnimation()
+                }
+                VEDIO_PREVIEW_HIDE -> {
+                    previewImg.visibility = View.GONE
+                    //删除缓存文件
+                    previewImg.setImageBitmap(null)
+                    File(filePath).delete()
                 }
             }
         }
     }
 
+    private var savePath: String = ""
+    fun setSavePath(path: String) {
+        this.savePath = path
+    }
+
     private lateinit var operationListener: OperationListener
     fun setOperateListener(operationListener: OperationListener) {
         this.operationListener = operationListener
-    }
-
-    private lateinit var savePath: String
-    fun setSavePath(path: String) {
-        savePath = path
     }
 
     interface OperationListener {

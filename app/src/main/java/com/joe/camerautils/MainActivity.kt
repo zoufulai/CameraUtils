@@ -1,8 +1,10 @@
 package com.joe.camerautils
 
+import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.support.annotation.RequiresApi
 import android.util.Log
 import android.widget.Toast
 import com.joe.camerautils.view.CameraView
@@ -47,5 +49,17 @@ class MainActivity : AppCompatActivity() {
 
         //设置图片保存路径
         camerview.setSavePath(path)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    override fun onResume() {
+        camerview.onResume()
+        super.onResume()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    override fun onPause() {
+        camerview.onPause()
+        super.onPause()
     }
 }

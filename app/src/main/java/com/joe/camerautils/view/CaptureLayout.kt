@@ -114,7 +114,6 @@ class CaptureLayout(context: Context) : FrameLayout(context) {
 
 
             override fun recorderEnd(time: Long) {
-                startButtonAnimation()
                 if (mCaptureListener != null)
                     mCaptureListener?.recorderEnd(time)
             }
@@ -125,7 +124,7 @@ class CaptureLayout(context: Context) : FrameLayout(context) {
             }
 
             override fun caputre() {
-                if (mCaptureListener != null){
+                if (mCaptureListener != null) {
                     mCaptureListener?.caputre()
                 }
             }
